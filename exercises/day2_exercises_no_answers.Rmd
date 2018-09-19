@@ -22,9 +22,6 @@ knitr::opts_chunk$set(echo=answers, eval=answers,
 
 Load the `gapminder` dataset.
 
-```{asis}
-### Answer
-```
 
 ```{r}
 gapminder <- read.csv(here::here("data/gapminder5.csv"), stringsAsFactors=FALSE)
@@ -37,9 +34,6 @@ Use an if() statement to print a suitable message reporting whether there are an
 
 Hint: use the `any` function.
 
-```{asis}
-### Answer
-```
 
 ```{r}
 year<-2002
@@ -142,4 +136,73 @@ Use what you've learned so far to answer the following questions using the `gapm
 
 1. What is the relationship between GDP per capita and life expectancy? Does this relationship change over time? (Hint: Use the natural log of both variables.)
 
+```{r}
+plot(log(gapminder$gdpPercap), log(gapminder$lifeExp), xlab = "GDP per Capita", ylab = "Life Expectancy", main = "Relationship between GDP per capita and life expectancy")
+```
+
+Answer: The relationship between GDP per capita and life expectancy is positive, which is, as GDP per capita increases, life expectancy will increase as well.
+
+```{r}
+viz_lm <-
+  function(year) {
+    dat <- gapminder[gapminder[["year"]] == year, ]
+    y <- log(dat[["lifeExp"]])
+    x <- log(dat[["gdpPercap"]])
+    fit <- lm(y ~ x)
+    plot(y ~ x, main = year,
+         xlab = "GDP per capita", ylab = "Life Expentancy")
+    lines(x, predict(fit), col = 'blue')
+  }
+
+```
+
+```{r}
+years = unique(gapminder$year)
+for (i in years){
+  viz_lm(i)
+}
+```
+
+```{r}
+for (i in years){
+  print(paste0("year:", i, ":", cor(gapminder$lifeExp[gapminder$year == i], gapminder$gdpPercap[gapminder$year == i])))
+}
+```
+
+
+
 2. Does the relationship between GDP per capita and life expectacy vary by continent? Make sure you divide the Americas into North and South America.
+
+```{r}
+for (i in (1:nrow(gapminder))){
+  if (gapminder[i, "continent"] == "Americas"){
+    if (gapminder[i, "country"] == "United States" || gapminder[i, "country"] == "Canada" || gapminder[i, "country"] == "Mexico"){
+      gapminder[i, "continent"] = "North America"
+    }
+    else{
+      gapminder[i, "continent"] = "South America"
+    }
+  }
+}
+
+viz_lm <-
+  function(continent) {
+    dat <- gapminder[gapminder[["continent"]] == continent, ]
+    y <- log(dat[["lifeExp"]])
+    x <- log(dat[["gdpPercap"]])
+    fit <- lm(y ~ x)
+    plot(y ~ x, main = continent,
+         xlab = "GDP per capita", ylab = "Life Expentancy")
+    lines(x, predict(fit), col = 'blue')
+  }
+
+cont = unique(gapminder$continent)
+
+for (j in cont){
+  viz_lm(j)
+}
+```
+
+
+
+

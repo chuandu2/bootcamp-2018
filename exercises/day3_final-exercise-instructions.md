@@ -8,6 +8,9 @@ You've learned quite a lot about R in a short time. Congratulations! This exerci
 
 Read the data files `nys_schools.csv` and `nys_acs.csv` into R. These data come from two different sources: one is data on *schools* in New York state from the [New York State Department of Education](http://data.nysed.gov/downloads.php), and the other is data on *counties* from the American Communities Sruvey from the US Census Bureau. Review the codebook file so that you know what each variable name means in each dataset. 
 
+
+
+
 #### Task 2: Explore your data
 
 Getting to know your data is a critical part of data analysis. Take the time to explore the structure of the two dataframes you have imported. What types of variables are there? Is there any missing data? How can you tell? What else do you notice about the data?

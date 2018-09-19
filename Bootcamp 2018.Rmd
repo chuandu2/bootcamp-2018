@@ -1,0 +1,209 @@
+---
+title: "R Day 2-Intro to R: Loops, conditions and functions"
+author: "Chuan Du (Sophie)"
+date: "9/18/2018"
+output: html_document
+---
+
+```{r}
+gapminder <- read.csv(here::here("data", "gapminder5.csv"))
+head(gapminder)
+```
+
+```{r}
+here::here()
+```
+
+```{r}
+here::here("data", "gapminder.csv")
+```
+
+
+# converting factors to characters
+```{r}
+str(gapminder)
+```
+
+```{r}
+gapminder$country = as.character(gapminder$country)
+gapminder$continent = as.character(gapminder$continent)
+```
+
+
+```{r}
+mean(gapminder$lifeExp[gapminder$country == "Afghanistan"])
+```
+
+#For loops
+The basic form is for (i in vector){function(i)}
+
+```{r}
+# create a vector of values that you want to repeat the function for
+obs <- 1:nrow(gapminder)
+
+# initialize the for loop with `for (i in vector)` 
+for (i in obs) { # the function to repeat is enclosed in braces {}
+  gapminder[i, "gdp"] <- gapminder[i, "pop"] * gapminder[i, "gdpPercap"]
+}
+```
+
+
+#creating logged variables with a for loop
+
+```{r}
+for (i in obs){
+  gapminder[i, "log_gdpPercap"] = log(gapminder[i, "gdpPercap"])
+  gapminder[i, "log_pop"] = log(gapminder[i, "pop"])
+}
+```
+
+
+```{r}
+years = unique(gapminder$year)
+
+for (i in years){
+  mean_le = mean(gapminder$lifeExp[gapminder$year == i])
+  #paste0: doesn't spread strings when you put them together
+  print(paste0(i, ":", mean_le))
+}
+```
+
+```{r}
+continent = unique(gapminder$continent)
+
+for (i in continent){
+  mean_ct = mean(gapminder$lifeExp[gapminder$continent == i], na.rm = TRUE)
+  print(paste0(i, ":", mean_ct))
+}
+```
+
+```{r}
+for (i in continent) {
+  print(paste0("Continent: ", i))
+  for (j in years) {
+    mean_le <- mean(gapminder$lifeExp[gapminder$continent == i & 
+                                          gapminder$year == j], 
+                      na.rm = T)
+    print(paste0(j, ": ", mean_le))
+  }
+}
+```
+
+```{r}
+for (i in continent) {
+  print(paste0("Continent: ", i))
+  for (j in years) {
+    sd_le <- sd(gapminder$lifeExp[gapminder$continent == i & 
+                                          gapminder$year == j], 
+                      na.rm = T)
+    print(paste0(j, ": ", sd_le))
+  }
+}
+```
+
+
+#Apply, lapply and sapply
+
+```{r}
+vars = gapminder[, c("lifeExp", "pop", "gdpPercap")]
+apply(vars, 2, mean, rm.na = TRUE)
+```
+
+lapply returns a list; sapply returns a simplified list.
+
+```{r}
+lapply(gapminder, mean)
+```
+
+```{r}
+sapply(years, function(x) mean(gapminder$lifeExp[gapminder$year == x]))
+```
+
+```{r}
+i = 1952 #define the interator
+
+while (i < 1987){
+  sd_le = sd(gapminder$lifeExp[gapminder$year == i])
+  print(paste0(i, ":", sd_le))
+  
+  i = i+5
+}
+```
+
+```{r}
+i = 1987
+
+while (i < 2003){
+  sd_le = sd(gapminder$lifeExp[gapminder$year == i])
+  print(paste0(i, ":", sd_le))
+  
+  i = i+5
+}
+```
+
+```{r}
+set.seed(10)
+random_year = sample(years, 1)
+if (random_year > 1997){
+  print(paste0(random_year, ":", mean(gapminder$lifeExp[gapminder$year == random_year])))
+  }else
+    {
+  print ("Sorry, the sample year is less than 1987.")
+}
+```
+
+
+```{r}
+for (i in years){
+  if (i >= 1987){
+    print(paste0(i, ":", mean(gapminder$pop[gapminder$year == i])))
+  }
+  else{
+    print("Sorry, the year is less than 1987.")
+  }
+}
+```
+
+
+```{r}
+report_mean_sd = function(df, variable, country){
+  var = df[[variable]][df$country == country]
+  m_le = mean(var)
+  sd_le = sd(var)
+  cat("country:", country,
+      "\nMean Life Expendency:", m_le,
+      "\nSD Life Expendency:", sd_le)
+}
+
+report_mean_sd(gapminder, "lifeExp", "Bulgaria")
+```
+
+
+```{r}
+report_mmmm = function(df, variable, continent){
+  var = df[[variable]][df$continent == continent]
+  mean = mean(var)
+  median = median(var)
+  mini = min(var)
+  maxi = max(var)
+  cat("continent:", continent,
+      "\nMean Life Expendency:", mean,
+      "\nMedian Life Expendency:", median,
+      "\nMinimum Life Expendency:", mini,
+      "\nMaximum Life Expendency:", maxi)
+}
+
+report_mmmm(gapminder, "lifeExp", "Asia")
+```
+
+
+
+
+
+
+
+
+
+
+
+
