@@ -1,0 +1,339 @@
+---
+title: "Day 3 R"
+author: "Chuan Du (Sophie)"
+date: "9/19/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+generation <- read.csv(here::here("data/generation.csv"), 
+                       stringsAsFactors = F)
+imports <- read.csv(here::here("data/imports.csv"), 
+                    stringsAsFactors = F)
+```
+
+```{r}
+here::here()
+```
+
+```{r}
+#check structure
+str(generation)
+```
+
+```{r}
+str(imports)
+```
+
+```{r}
+class(generation$datetime)
+
+class(imports$datetime)
+```
+
+```{r}
+#use lubridate to deal with date time
+library(lubridate)
+generation$datetime <- as_datetime(generation$datetime)
+class(generation$datetime)
+```
+
+```{r}
+head(generation$datetime)
+```
+
+```{r}
+imports$datetime = as_datetime(imports$datetime)
+head(imports$datetime)
+```
+
+#Reshaping Data
+##Principles of ???tidy data??? (R for Data Science - Wickham & Grolemund)
+- Each variable must have its own column.
+- Each observation must have its own row.
+- Each value must have its own cell.
+
+
+melt ???> make data long
+dcast ???> make data wide
+recast???> melt then cast data
+
+##melt(df, id.vars = "id")
+```{r}
+library(reshape2)
+#Specify the column names
+long_gen <- melt(generation, id.vars = "datetime",
+                           variable.name = "source",
+                           value.name = "usage")
+head(long_gen)
+```
+
+```{r}
+merged_energy = merge(generation, imports, by = "datetime")
+merged_energy
+```
+
+```{r}
+#Specify the variable that doesn???t melt with id.vars
+long_merged_energy = melt(merged_energy, id.vars = "datetime",
+                          variable.name = "source",
+                          value.name = "usage")
+head(long_merged_energy)
+```
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+tmp = select(merged_energy, biogas, biomass, geothermal, solar)
+names(tmp)
+```
+
+```{r}
+tmp <- select(merged_energy, -biogas, -biomass, -geothermal, -solar)
+names(tmp)
+```
+
+```{r}
+tmp <- select(merged_energy, contains("hydro"), starts_with("bio"))
+names(tmp)
+```
+
+```{r}
+tmp = filter(merged_energy, imports > 700)
+nrow(tmp)
+tmp
+```
+
+
+
+```{r}
+tmp = mutate(long_merged_energy, log_usage = log(usage))
+head(tmp)
+```
+
+```{r}
+#mutate creates new variable
+tmp <- mutate(long_merged_energy, log_usage = log(usage), usage2 = usage^2, usage3 = usage^3)
+head(tmp)
+```
+
+summarize reduces observations to a single value based on functions - mean, sum,  sd, min, max, etc
+
+```{r}
+#total energy consumption
+summarize(long_merged_energy, total = sum(usage, na.rm = T))
+```
+
+```{r}
+#mean energy consumption
+summarize(long_merged_energy, mean_consum = mean(usage, na.rm = T))
+```
+
+The powerful %>% operator lets you chain together functions.
+It sends the result of one function to another function.
+Read %>% as ???then???.
+
+
+```{r}
+# take df then filter it then select these variables
+# you do not need to repeat the name of the dataframe!
+long_merged_energy %>% 
+  filter(source == "geothermal") %>% 
+  select(-datetime) %>% 
+  mutate(log_usage = log(usage)) %>% 
+  summarize(mean_log_usage = mean(log_usage, na.rm = T))
+```
+
+While piping, the piped dataframe is not changed!
+To refer to the manipulated dataframe, use .
+
+```{r}
+merged_energy %>% 
+  select(-datetime) %>% 
+  mutate(total_usage = rowSums(., na.rm = T)) %>% 
+  summarize(total_usage = sum(total_usage, na.rm = T))
+```
+
+```{r}
+merged_energy %>%
+  select(contains("hydro")) %>%
+  mutate(total_hydro = rowSums(., na.rm = T)) %>%
+  summarize(mean_hydro = mean(total_hydro, na.rm = T))
+```
+
+group_by is a powerful function that allows us to perform operations by groups of observations!
+
+```{r}
+long_merged_energy %>% 
+  group_by(source) %>% 
+  summarize(sum_usage = sum(usage, na.rm = T))
+```
+
+```{r}
+merged_energy %>%
+  #find small/large hydrop, biomass, biogas
+  select(datetime, contains("hydro"), contains("bio")) %>%
+  #long merged
+  melt(id.vars = "datetime",
+       variable.name = "source",
+       value.name = "usage") %>%
+  group_by(source) %>%
+  summarize(mean_usage = mean(usage, na.rm = T))
+```
+
+#data.table
+
+```{r}
+library(data.table)
+```
+
+```{r}
+data_file = here::here("data", "generation.csv")
+
+# read in two versions of data, one as a data.frame and one as a data.table
+generation_df <- read.csv(data_file, stringsAsFactors = F)
+
+generation_dt <- fread(data_file)
+```
+
+```{r}
+
+#View(generation_df)
+#View(generation_dt)
+
+#generation_df
+#generation_dt
+
+class(generation_df) # "data.frame"
+class(generation_dt) # "data.table" "data.frame"
+
+str(generation_df)
+str(generation_dt)
+```
+
+```{r}
+generation_dt[, datetime := as_datetime(datetime)]
+generation_dt[,.(solar_wind = solar + wind), by = .(day(datetime), hour(datetime))]
+```
+
+```{r}
+generation_dt[,solar_on := NULL]
+generation_dt[,all_hydro := NULL]
+```
+
+
+
+```{r}
+source(here::here("data/day3_objects.R"))
+```
+
+```{r}
+ggplot(data = gapminder07) +
+  geom_point(mapping = aes(x = gdpPercap, y = lifeExp)) +
+  labs(title = "Relationship between life expectancy and GDP percapita in 2007", x = "GDP percapita", y = "Life expectancy")
+```
+
+```{r}
+ggplot(data = gapminder07) +
+  geom_point(aes(x = log(pop), y = log(gdpPercap)))+
+  labs(title = "Relationship between GDP per capita and Population", x = "Population", y = "GDP per capita")
+```
+
+```{r}
+long_gen %>%
+  group_by(datetime) %>%
+  summarise(output = sum(output)) %>%
+  ggplot() +
+  geom_col(aes(x = datetime , y = output))+
+  labs(title="Total energy generated, by hour", x="Hour", y="Output (MW)")
+```
+
+```{r}
+long_gen %>%
+  group_by(datetime) %>%
+  filter(source=="large_hydro"|source=="small_hydro") %>%
+  #filter gives the rows
+  #select(contains("hydro")) %>% is only for columns
+  summarise(output = sum(output)) %>%
+  ggplot() +
+  geom_col(aes(x = datetime , y = output))+
+  labs(title="Hydro power generated, by hour", x="Hour", y="Output (MW)")
+```
+
+```{r}
+generation %>% 
+  mutate(hydro=large_hydro+small_hydro) %>%
+  ggplot() + 
+  geom_col(aes(x=datetime, y=hydro)) + 
+  labs(title="Total hydro power generated, by hour", x="Hour", y="Output (MW)")
+```
+
+```{r}
+long_gen %>%
+  group_by(source) %>%
+  summarise(output = sum(output)) %>%
+  ggplot() +
+  geom_col(aes(x = source, y = output), fill = "darkred") +
+  geom_hline(aes(yintercept = mean(output))) +
+  labs(title = "Total output per source", x = "Source", y = "Output (MW)") +
+  theme_bw()
+```
+
+```{r}
+long_gen %>%
+  group_by(datetime) %>%
+  filter(source == "wind" | source == "solar" | source == "geothermal") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = output, group = source, col = source), size = 1.5) +
+  labs(title = "Wind vs Solar vs Geothermal generation")
+```
+
+```{r}
+long_merged_energy %>%
+  #original time was with date
+  mutate(hour = lubridate::hour(datetime)) %>%
+  #each hour, by source
+  group_by(source, hour) %>%
+  summarise(mean_output = mean(output)) %>%
+  ggplot() +
+  geom_area(aes(x = hour, y = mean_output, group = source, fill = source)) +
+  scale_fill_brewer(palette = "Set3", name = "Energy source")
+  labs(title = "Average hourly output by source", x = "Hour", y = "Output")
+```
+
+```{r}
+long_gen %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = output)) +
+  facet_wrap(~source) +
+  labs(title="Generation over time, by energy source", subtitle="Hourly data from September 3-9, 2018", x="Hour", y="Output (MW)")
+```
+
+```{r}
+head(regroup)
+```
+
+
+```{r}
+long_gen %>%
+  rename(type = source) %>%
+  merge(regroup, by = "type") %>%
+  ggplot() +
+  geom_line(aes(x = datetime, y = output, group = group, col = group), size = 0.5) +
+  facet_wrap(~type, scales = "free") +
+  labs(title="Generation over time, by energy source", subtitle="Hourly data from September 3-9, 2018", x="Hour", y="Output (MW)") + 
+  theme(legend.position = "bottom")
+
+```
+
+
+
+
+
+
