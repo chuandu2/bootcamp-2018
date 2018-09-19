@@ -117,6 +117,7 @@ head(counties)
 #####Part 3
 
 
+
 #### Task 4: Merge datasets
 
 Create a county-level dataset that merges variables from the schools dataset and the ACS dataset. Remember that you have learned multiple approaches on how to do this, and that you will have to decide how to summarize data when moving from the school to the county level.
